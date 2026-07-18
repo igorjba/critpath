@@ -1,4 +1,4 @@
-# Critpath — otimizador de parada de manutenção
+# Critpath — Otimizador de parada de manutenção
 
 Programação de parada de manutenção (turnaround) modelada como **RCPSP**
 (Resource-Constrained Project Scheduling Problem) e resolvida por um motor de

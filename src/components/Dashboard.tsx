@@ -81,7 +81,7 @@ export function Dashboard() {
             <h1 className="flex items-center gap-1.5 text-lg font-semibold tracking-tight">
               Critpath
               <span className="ml-1 font-normal text-muted-foreground">
-                otimizador de parada de manutenção
+                Otimizador de parada de manutenção
               </span>
               <InfoTip side="bottom" label="O que este app faz">
                 Uma parada de manutenção é quando uma unidade industrial é desligada para
