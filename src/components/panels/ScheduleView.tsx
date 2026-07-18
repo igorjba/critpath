@@ -6,6 +6,7 @@ import { buildScheduledActivities, buildResourceProfiles } from "@/lib/rcpsp/sch
 import { GanttChart } from "@/components/charts/GanttChart";
 import { ResourceProfiles } from "@/components/charts/ResourceProfiles";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { InfoTip } from "@/components/ui/info-tip";
 import { cn, criticalBg } from "@/lib/utils";
 
 export function ScheduleView({ project, result }: { project: RcpspProject; result: SolveResult }) {
@@ -23,9 +24,17 @@ export function ScheduleView({ project, result }: { project: RcpspProject; resul
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <Card className="min-w-0 xl:col-span-2">
         <CardHeader>
-          <CardTitle>Cronograma com nivelamento de recursos</CardTitle>
+          <CardTitle className="flex items-center gap-1.5">
+            Cronograma da parada
+            <InfoTip label="Como ler o Gantt">
+              Cada barra é uma tarefa posicionada no tempo (eixo horizontal, em horas). As barras
+              <strong className="text-[var(--critical)]"> vermelhas</strong> são o caminho crítico:
+              a corrente de tarefas que define a data de partida. A linha fina após uma barra é a
+              folga — quanto ela pode atrasar sem afetar o fim.
+            </InfoTip>
+          </CardTitle>
           <CardDescription>
-            Serial SGS sobre a activity list otimizada. Barras vermelhas formam o caminho crítico.
+            Ordem de execução que minimiza o tempo de parada, respeitando equipes e o guindaste.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -35,8 +44,15 @@ export function ScheduleView({ project, result }: { project: RcpspProject; resul
 
       <Card>
         <CardHeader>
-          <CardTitle>Carga por recurso</CardTitle>
-          <CardDescription>Histograma de uso vs. capacidade; gargalos em vermelho.</CardDescription>
+          <CardTitle className="flex items-center gap-1.5">
+            Carga por recurso
+            <InfoTip label="O que é carga por recurso">
+              Mostra quantas pessoas ou equipamentos de cada tipo estão em uso ao longo do tempo,
+              contra o total disponível (linha tracejada). Quando o uso fica colado no teto boa
+              parte do tempo, aquele recurso é o <strong>gargalo</strong> — mostrado em vermelho.
+            </InfoTip>
+          </CardTitle>
+          <CardDescription>Uso de cada equipe/equipamento vs. o que existe disponível.</CardDescription>
         </CardHeader>
         <CardContent>
           <ResourceProfiles profiles={profiles} makespan={result.makespan} />
@@ -45,9 +61,18 @@ export function ScheduleView({ project, result }: { project: RcpspProject; resul
 
       <Card className="min-w-0 xl:col-span-3">
         <CardHeader>
-          <CardTitle>Ordens da parada</CardTitle>
+          <CardTitle className="flex items-center gap-1.5">
+            Ordens da parada
+            <InfoTip label="O que são as colunas de folga">
+              <strong>Folga total</strong>: quanto a tarefa pode atrasar sem empurrar a data de
+              partida da unidade (folga zero = está no caminho crítico).{" "}
+              <strong>Folga livre</strong>: quanto pode atrasar sem sequer mexer no início das
+              tarefas seguintes.
+            </InfoTip>
+          </CardTitle>
           <CardDescription>
             {rows.length} atividades · {rows.filter((a) => a.isCritical).length} no caminho crítico
+            (sem folga)
           </CardDescription>
         </CardHeader>
         <CardContent>

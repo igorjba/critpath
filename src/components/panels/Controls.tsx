@@ -5,6 +5,7 @@ import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { turnaroundSample } from "@/lib/data/turnaround";
 import { psplibInstances } from "@/lib/data/psplib";
+import { InfoTip } from "@/components/ui/info-tip";
 import { ImportDialog } from "./ImportDialog";
 
 export function Controls() {
@@ -71,7 +72,12 @@ export function Controls() {
         </div>
 
         <label className="flex flex-col gap-1">
-          <span className="text-[11px] font-medium text-muted-foreground">
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+            <InfoTip label="O que é esforço de busca">
+              Quantos cronogramas o otimizador testa. Mais tentativas = solução um pouco melhor,
+              porém mais lenta. O problema é NP-difícil: não dá para testar todas as combinações, por
+              isso a busca é inteligente, não exaustiva.
+            </InfoTip>
             Esforço de busca: <span className="tabular text-foreground">{iterations.toLocaleString()}</span> iterações
           </span>
           <input

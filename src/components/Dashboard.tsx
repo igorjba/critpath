@@ -11,6 +11,7 @@ import { BenchmarkView } from "@/components/panels/BenchmarkView";
 import { ScenariosBar } from "@/components/panels/ScenariosBar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { InfoTip } from "@/components/ui/info-tip";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Dashboard() {
@@ -27,20 +28,44 @@ export function Dashboard() {
       0,
     );
     return [
-      { label: "Makespan", value: `${result.makespan}h`, tone: "primary", sub: "janela de parada" },
-      { label: "Caminho crítico", value: `${result.criticalPathLB}h`, sub: "limite inferior" },
-      { label: "Folga de recurso", value: `${gapLb.toFixed(1)}%`, sub: "makespan vs. LB" },
-      { label: "Atividades críticas", value: critical - 2, tone: "critical", sub: "folga total zero" },
+      {
+        label: "Makespan",
+        value: `${result.makespan}h`,
+        tone: "primary",
+        sub: "duração da parada",
+        help: "Duração total da parada, do começo ao fim — a janela em que a unidade fica fora de operação. O otimizador busca deixá-la a menor possível.",
+      },
+      {
+        label: "Caminho crítico",
+        value: `${result.criticalPathLB}h`,
+        sub: "mínimo teórico",
+        help: "A menor duração possível se houvesse equipe e guindaste ilimitados. É o piso teórico: nenhum cronograma consegue ser mais curto que isto.",
+      },
+      {
+        label: "Folga de recurso",
+        value: `${gapLb.toFixed(1)}%`,
+        sub: "acima do mínimo",
+        help: "Quanto a parada real passa do mínimo teórico por causa de equipes e guindaste limitados. Quanto menor, mais enxuto está o plano.",
+      },
+      {
+        label: "Atividades críticas",
+        value: critical - 2,
+        tone: "critical",
+        sub: "sem folga",
+        help: "Tarefas que não têm folga nenhuma. Atrasar qualquer uma delas empurra a data de partida da unidade inteira.",
+      },
       {
         label: "Cálculo",
         value: `${(result.elapsedMs / 1000).toFixed(1)}s`,
-        sub: `${result.iterations.toLocaleString()} iter.`,
+        sub: `${result.iterations.toLocaleString()} tentativas`,
+        help: "Tempo que o otimizador levou e quantos cronogramas ele testou para chegar a este resultado, tudo no seu navegador.",
       },
       {
-        label: "P80 (Monte Carlo)",
+        label: "P80",
         value: monteCarlo ? `${Math.round(monteCarlo.p80)}h` : "—",
         tone: "accent",
-        sub: monteCarlo ? "80% de confiança" : "rode a simulação",
+        sub: monteCarlo ? "80% de chance" : "rode a simulação",
+        help: "Prazo com 80% de chance de ser cumprido, considerando que as tarefas variam de duração. Planejar pela duração 'seca' costuma dar bem menos de 50% de chance. Disponível após rodar a simulação de risco.",
       },
     ];
   }, [result, monteCarlo]);
@@ -53,11 +78,17 @@ export function Dashboard() {
             <GitBranch className="size-5" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold tracking-tight">
-              critpath
-              <span className="ml-2 font-normal text-muted-foreground">
+            <h1 className="flex items-center gap-1.5 text-lg font-semibold tracking-tight">
+              Critpath
+              <span className="ml-1 font-normal text-muted-foreground">
                 otimizador de parada de manutenção
               </span>
+              <InfoTip side="bottom" label="O que este app faz">
+                Uma parada de manutenção é quando uma unidade industrial é desligada para
+                reparos. Este app monta o cronograma que deixa a unidade parada o menor tempo
+                possível — respeitando equipes, o guindaste único e as tarefas que só podem
+                acontecer em ordem — e ainda estima o risco da data e quando trocar cada peça.
+              </InfoTip>
             </h1>
             <p className="text-xs text-muted-foreground">{sourceLabel}</p>
           </div>
@@ -124,17 +155,17 @@ export function Dashboard() {
   );
 }
 
-function EmptyState({ solving }: { solving: boolean }) {
+function EmptyState({ solving }: Readonly<{ solving: boolean }>) {
   return (
     <div className="grid place-items-center rounded-xl border border-dashed border-border bg-card/40 py-16 text-center">
-      <div className="max-w-md space-y-2">
+      <div className="max-w-lg space-y-2">
         <h2 className="text-base font-medium">
-          {solving ? "Otimizando o cronograma…" : "Pronto para otimizar"}
+          {solving ? "Montando o melhor cronograma…" : "Pronto para começar"}
         </h2>
         <p className="text-sm text-muted-foreground">
           {solving
-            ? "O motor roda em WebAssembly numa worker thread — sem congelar a página e sem timeout de serverless."
-            : "Escolha um projeto e clique em Otimizar. O solver resolve o RCPSP com serial SGS + simulated annealing."}
+            ? "O otimizador está testando milhares de cronogramas para achar o que deixa a unidade parada o menor tempo possível. Roda todo no seu navegador, sem travar a página."
+            : "Escolha um projeto acima e clique em Otimizar. O app encontra a ordem das tarefas que minimiza o tempo de parada, respeitando o tamanho das equipes e o guindaste único — e destaca o caminho crítico, o que decide a data de partida."}
         </p>
       </div>
     </div>

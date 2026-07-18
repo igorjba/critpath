@@ -10,7 +10,7 @@ Planejamento de parada é RCPSP na prática: milhares de ordens, precedências, 
 limitadas, guindaste único como gargalo e janela de parada fixa. O problema é
 NP-difícil; um solver de brinquedo ignora as restrições que decidem a data real.
 
-![Dashboard do critpath: KPIs da parada, Gantt com caminho crítico destacado,
+![Dashboard do Critpath: KPIs da parada, Gantt com caminho crítico destacado,
 histograma de carga por recurso com o guindaste como gargalo e a tabela de ordens com
 folgas](docs/screenshot.png)
 

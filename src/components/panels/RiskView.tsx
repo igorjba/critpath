@@ -5,6 +5,7 @@ import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { StatBox } from "@/components/ui/stat";
+import { InfoTip } from "@/components/ui/info-tip";
 import { MonteCarloChart } from "@/components/charts/MonteCarloChart";
 
 export function RiskView() {
@@ -20,10 +21,17 @@ export function RiskView() {
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Simulação de Monte Carlo</CardTitle>
+          <CardTitle className="flex items-center gap-1.5">
+            Risco da data de partida
+            <InfoTip label="O que é a simulação de Monte Carlo">
+              Na vida real toda tarefa varia: algumas atrasam, outras adiantam. Aqui o cronograma é
+              recalculado milhares de vezes sorteando durações plausíveis para cada tarefa. O
+              resultado é a distribuição de datas possíveis de partida — não uma data única.
+            </InfoTip>
+          </CardTitle>
           <CardDescription>
-            Duração PERT-beta por atividade, propagada pela mesma sequência ótima. A pergunta da
-            diretoria não é uma data — é P50/P80.
+            A pergunta da diretoria não é uma data, é uma probabilidade: qual a chance de partir no
+            prazo?
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,7 +68,13 @@ export function RiskView() {
             </label>
             <label className="block">
               <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
-                <span>Cauda pessimista</span>
+                <span className="inline-flex items-center gap-1">
+                  Cauda pessimista
+                  <InfoTip label="O que é a cauda pessimista">
+                    No pior caso, quanto uma tarefa pode passar da duração planejada. Em manutenção
+                    o atraso costuma ser maior que o adiantamento — por isso a cauda é assimétrica.
+                  </InfoTip>
+                </span>
                 <span className="tabular text-foreground">+{spread}%</span>
               </div>
               <input
@@ -87,12 +101,38 @@ export function RiskView() {
             </CardHeader>
             <CardContent>
               <dl className="grid grid-cols-2 gap-2 text-sm tabular">
-                <StatBox label="Determinístico" value={`${monteCarlo.deterministic}h`} />
-                <StatBox label="Média" value={`${monteCarlo.mean.toFixed(1)}h`} />
-                <StatBox label="P50" value={`${Math.round(monteCarlo.p50)}h`} tone="primary" />
-                <StatBox label="P80" value={`${Math.round(monteCarlo.p80)}h`} tone="critical" />
-                <StatBox label="P90" value={`${Math.round(monteCarlo.p90)}h`} />
-                <StatBox label="Desvio" value={`±${monteCarlo.std.toFixed(1)}h`} />
+                <StatBox
+                  label="Determinístico"
+                  value={`${monteCarlo.deterministic}h`}
+                  help="A duração do plano 'no papel', sem considerar variação. Costuma ser otimista demais."
+                />
+                <StatBox
+                  label="Média"
+                  value={`${monteCarlo.mean.toFixed(1)}h`}
+                  help="Duração média entre todas as simulações."
+                />
+                <StatBox
+                  label="P50"
+                  value={`${Math.round(monteCarlo.p50)}h`}
+                  tone="primary"
+                  help="Prazo com 50% de chance de ser cumprido — metade das simulações terminou antes disso."
+                />
+                <StatBox
+                  label="P80"
+                  value={`${Math.round(monteCarlo.p80)}h`}
+                  tone="critical"
+                  help="Prazo com 80% de chance de ser cumprido. É a data que se leva para a diretoria."
+                />
+                <StatBox
+                  label="P90"
+                  value={`${Math.round(monteCarlo.p90)}h`}
+                  help="Prazo bem conservador: 90% de chance de cumprir."
+                />
+                <StatBox
+                  label="Desvio"
+                  value={`±${monteCarlo.std.toFixed(1)}h`}
+                  help="O quanto as durações variam em torno da média. Maior = mais incerteza."
+                />
               </dl>
               <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
                 Planejar pelo determinístico ({monteCarlo.deterministic}h) dá ~

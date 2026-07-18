@@ -6,6 +6,7 @@ import { sealLifeSample } from "@/lib/data/reliability";
 import { optimizeInterval } from "@/lib/weibull/interval";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { StatBox } from "@/components/ui/stat";
+import { InfoTip } from "@/components/ui/info-tip";
 import { WeibullChart } from "@/components/charts/WeibullChart";
 
 export function ReliabilityView() {
@@ -33,16 +34,40 @@ export function ReliabilityView() {
       <div className="space-y-4 lg:col-span-1">
         <Card>
           <CardHeader>
-            <CardTitle>Ajuste de Weibull (MLE censurado)</CardTitle>
+            <CardTitle className="flex items-center gap-1.5">
+              Vida útil do equipamento
+              <InfoTip label="O que é o ajuste de Weibull">
+                Weibull é a curva estatística que descreve quanto tempo uma peça dura até falhar. O
+                ajuste é <strong>censurado</strong> porque a maioria das peças ainda não falhou — só
+                sabemos que sobreviveram até agora. Ignorar isso subestimaria a vida real.
+              </InfoTip>
+            </CardTitle>
             <CardDescription>{sealLifeSample.name}</CardDescription>
           </CardHeader>
           <CardContent>
             {fit ? (
               <dl className="grid grid-cols-2 gap-2 text-sm tabular">
-                <StatBox label="Forma (k)" value={fit.shape.toFixed(2)} tone="primary" />
-                <StatBox label="Escala (η)" value={`${Math.round(fit.scale)} h`} />
-                <StatBox label="MTTF" value={interval ? `${Math.round(interval.mttf)} h` : "—"} />
-                <StatBox label="Falhas" value={`${fit.failures}/${fit.total}`} />
+                <StatBox
+                  label="Forma (k)"
+                  value={fit.shape.toFixed(2)}
+                  tone="primary"
+                  help="Como a peça falha. Menor que 1 = falhas aleatórias (não envelhece). Maior que 1 = desgaste: quanto mais velha, maior a chance de falhar."
+                />
+                <StatBox
+                  label="Escala (η)"
+                  value={`${Math.round(fit.scale)} h`}
+                  help="Vida característica: a idade em que cerca de 63% das peças já falharam."
+                />
+                <StatBox
+                  label="MTTF"
+                  value={interval ? `${Math.round(interval.mttf)} h` : "—"}
+                  help="Tempo médio até falhar (Mean Time To Failure)."
+                />
+                <StatBox
+                  label="Falhas"
+                  value={`${fit.failures}/${fit.total}`}
+                  help="Quantas peças de fato falharam, de todas as observadas. As demais ainda estão em operação (dados censurados)."
+                />
               </dl>
             ) : (
               <div className="h-16 animate-pulse rounded bg-secondary/50" />
@@ -66,7 +91,14 @@ export function ReliabilityView() {
           <CardContent className="space-y-4">
             <label className="block">
               <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
-                <span>Falha ÷ preventiva</span>
+                <span className="inline-flex items-center gap-1">
+                  Falha ÷ preventiva
+                  <InfoTip label="O que é a razão falha ÷ preventiva">
+                    Quantas vezes uma falha inesperada custa mais que uma troca preventiva
+                    programada (parada de emergência, dano secundário, produção perdida). Quanto
+                    maior, mais compensa antecipar a manutenção.
+                  </InfoTip>
+                </span>
                 <span className="tabular text-foreground">{cfRatio}×</span>
               </div>
               <input
@@ -81,7 +113,14 @@ export function ReliabilityView() {
             </label>
             {interval && (
               <div className="rounded-md border border-primary/30 bg-primary/10 p-2.5">
-                <div className="text-[11px] text-muted-foreground">Intervalo ótimo</div>
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  Intervalo ótimo
+                  <InfoTip label="O que é o intervalo ótimo">
+                    De quanto em quanto tempo trocar a peça para gastar menos no total. Cedo demais
+                    desperdiça vida útil; tarde demais arrisca a falha cara. O ponto ótimo é o vale
+                    da curva de custo ao lado.
+                  </InfoTip>
+                </div>
                 <div className="text-2xl font-semibold text-primary tabular">
                   {Math.round(interval.optimalT)} h
                 </div>

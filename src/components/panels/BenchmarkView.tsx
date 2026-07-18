@@ -5,6 +5,7 @@ import { psplibInstances } from "@/lib/data/psplib";
 import { solveProject } from "@/lib/engine/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { InfoTip } from "@/components/ui/info-tip";
 import { cn, toneText, type Tone } from "@/lib/utils";
 
 interface Row {
@@ -50,10 +51,18 @@ export function BenchmarkView() {
       <CardHeader>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <CardTitle>Validação no PSPLIB J30</CardTitle>
+            <CardTitle className="flex items-center gap-1.5">
+              Prova de qualidade (PSPLIB J30)
+              <InfoTip label="O que é esta validação">
+                PSPLIB é um conjunto público de problemas de agendamento cuja{" "}
+                <strong>resposta ótima já é conhecida</strong>. Rodar o otimizador contra ele e
+                medir a diferença (o <strong>gap</strong>) prova a qualidade com número, não com
+                promessa. Gap de 0% significa que ele achou a melhor resposta possível.
+              </InfoTip>
+            </CardTitle>
             <CardDescription>
-              Ótimos provados por Demeulemeester &amp; Herroelen. O solver roda no seu navegador; o
-              gap é medido, não declarado.
+              O otimizador roda no seu navegador contra respostas ótimas conhecidas; o gap é medido,
+              não declarado.
             </CardDescription>
           </div>
           <div className="flex items-center gap-3">
