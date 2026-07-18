@@ -1,4 +1,4 @@
-# critpath — otimizador de parada de manutenção
+# Critpath — otimizador de parada de manutenção
 
 Programação de parada de manutenção (turnaround) modelada como **RCPSP**
 (Resource-Constrained Project Scheduling Problem) e resolvida por um motor de
@@ -9,6 +9,10 @@ cliente. Sobre o cronograma otimizado, o app calcula o risco da data de partida 
 Planejamento de parada é RCPSP na prática: milhares de ordens, precedências, equipes
 limitadas, guindaste único como gargalo e janela de parada fixa. O problema é
 NP-difícil; um solver de brinquedo ignora as restrições que decidem a data real.
+
+![Dashboard do critpath: KPIs da parada, Gantt com caminho crítico destacado,
+histograma de carga por recurso com o guindaste como gargalo e a tabela de ordens com
+folgas](docs/screenshot.png)
 
 ## Funcionalidades
 
@@ -40,11 +44,11 @@ Herroelen). O gap para o ótimo é medido, não declarado.
 Resultado sobre a amostra das 48 famílias do J30 (primeira instância de cada
 parâmetro), 30.000 iterações por instância, semente fixa:
 
-| Métrica            | Valor    |
-| ------------------ | -------- |
-| Ótimo atingido     | 44/48 (91,7%) |
-| Gap médio          | 0,151%   |
-| Pior gap           | 2,33%    |
+| Métrica        | Valor         |
+| -------------- | ------------- |
+| Ótimo atingido | 44/48 (91,7%) |
+| Gap médio      | 0,151%        |
+| Pior gap       | 2,33%         |
 
 Reproduzível com `npm run validate` após baixar o dataset (abaixo). O `--full` roda as
 480 instâncias.
