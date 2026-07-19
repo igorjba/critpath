@@ -1,48 +1,125 @@
-# Critpath — Otimizador de parada de manutenção
+# Critpath
 
-Programação de parada de manutenção (turnaround) modelada como **RCPSP**
-(Resource-Constrained Project Scheduling Problem) e resolvida por um motor de
-otimização compilado para **WebAssembly**, rodando numa **Web Worker** — 100% no
-cliente. Sobre o cronograma otimizado, o app calcula o risco da data de partida por
-**Monte Carlo** e o intervalo ótimo de manutenção por **Weibull com censura**.
+Encontra o cronograma que deixa uma unidade industrial parada para manutenção o menor
+tempo possível, respeitando equipes e equipamentos limitados.
 
-Planejamento de parada é RCPSP na prática: milhares de ordens, precedências, equipes
-limitadas, guindaste único como gargalo e janela de parada fixa. O problema é
-NP-difícil; um solver de brinquedo ignora as restrições que decidem a data real.
+[![CI](https://github.com/igorjba/critpath/actions/workflows/ci.yml/badge.svg)](https://github.com/igorjba/critpath/actions/workflows/ci.yml)
+[![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue)](LICENSE)
+![PSPLIB J30](https://img.shields.io/badge/PSPLIB%20J30-44%2F48%20%C3%B3timo%20%C2%B7%20gap%200.151%25-brightgreen)
 
-![Dashboard do Critpath: KPIs da parada, Gantt com caminho crítico destacado,
-histograma de carga por recurso com o guindaste como gargalo e a tabela de ordens com
-folgas](docs/screenshot.png)
+![Painel do Critpath com a parada de exemplo resolvida: indicadores no topo, Gantt com o
+caminho crítico em vermelho, histograma de carga por recurso com o guindaste saturado como
+gargalo, e a tabela de ordens com folgas.](docs/screenshot.png)
 
-## Funcionalidades
+Rodar: [Como rodar](#como-rodar) · Garantias verificáveis: [Garantias](#garantias)
 
-- **Solver RCPSP** — serial schedule generation scheme (serial SGS) sobre uma activity
-  list mantida precedence-feasible, otimizada por simulated annealing com operador de
-  realocação e *double justification* (forward-backward).
-- **Caminho crítico e folgas** — passe CPM (ES/EF/LS/LF), folga total e folga livre,
-  com o caminho crítico destacado no Gantt.
-- **Nivelamento de recursos** — histograma de carga por recurso vs. capacidade, com
-  detecção de gargalo (recurso saturado por fração relevante do horizonte).
-- **Monte Carlo (PERT-beta)** — distribuição da duração por atividade propagada pela
-  sequência ótima; a saída é a distribuição do makespan, com P50/P80/P90 e a curva
-  "chance de partir até a data".
-- **Weibull com censura** — ajuste por máxima verossimilhança com dados censurados à
-  direita (a maioria dos equipamentos ainda não falhou), e o intervalo ótimo de
-  substituição por idade minimizando custo de preventiva vs. risco de falha.
-- **Importador IW39/IW49** — lê o export tabular do SAP PM; centro de trabalho vira
-  recurso e a coluna de precedências monta a rede.
-- **Validação PSPLIB J30** — roda o solver ao vivo contra instâncias com ótimo provado
-  e mede o gap.
-- **Cenários** — salva e compara execuções (makespan, esforço, P80) em IndexedDB.
+## Visão geral
 
-## O motor e sua validação
+Quando uma unidade industrial para para manutenção (uma _turnaround_), ela deixa de
+produzir. Cada dia parada custa caro, então a pergunta é sempre a mesma: qual a ordem de
+executar centenas de tarefas — que dependem umas das outras e disputam as mesmas equipes e
+o mesmo guindaste — que termina tudo no menor tempo? O problema é NP-difícil: o número de
+ordens possíveis cresce rápido demais para testar todas.
 
-O solver tem *ground truth* público: a biblioteca **PSPLIB** (Kolisch & Sprecher). O
-conjunto J30 tem ótimo provado para todas as 480 instâncias (Demeulemeester &
-Herroelen). O gap para o ótimo é medido, não declarado.
+Formalmente, isso é o **RCPSP** (Resource-Constrained Project Scheduling Problem). O
+Critpath resolve o RCPSP com um motor de otimização compilado para WebAssembly que roda no
+navegador, dentro de uma Web Worker. Sobre o cronograma encontrado, calcula ainda o risco
+da data de partida por simulação de **Monte Carlo** e o intervalo ótimo de troca de peças
+por ajuste de **Weibull com dados censurados**.
 
-Resultado sobre a amostra das 48 famílias do J30 (primeira instância de cada
-parâmetro), 30.000 iterações por instância, semente fixa:
+O valor de um otimizador está inteiramente na qualidade e na validade do que ele produz.
+Por isso o documento abre pelas garantias verificáveis, antes da lista de funcionalidades.
+
+## Garantias
+
+Cada invariante abaixo é verificada por um comando do repositório.
+
+| Invariante                                                                                        | Prova                             |
+| ------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Todo cronograma respeita as precedências e em nenhum instante excede a capacidade de um recurso   | `npm test`                        |
+| Na instância J30 1-1, o solver encontra o ótimo provado (makespan 43)                             | `npm test`                        |
+| Um import IW39/IW49 com ciclo de precedências é rejeitado, sem corromper o estado                 | `npm test`                        |
+| O ajuste de Weibull com censura recupera o regime de desgaste (forma _k_ > 1) na amostra de selos | `npm test`                        |
+| Sobre 48 famílias do J30, atinge o ótimo em 44 e fica a 0,151% dele em média (pior caso 2,33%)    | `npm run validate -- --iters 30000` † |
+
+† Requer baixar o dataset uma vez: `node scripts/fetch-psplib.mjs`. As linhas provadas por
+`npm test` não dependem do dataset — usam o subconjunto empacotado em
+`src/lib/data/psplib-sample.json`.
+
+## Como rodar
+
+```bash
+npm install
+npm run dev      # o passo predev compila o WASM (AssemblyScript) antes de subir o Next
+```
+
+Build de produção (o passo prebuild compila o WASM):
+
+```bash
+npm run build
+```
+
+Rodar os testes de invariante:
+
+```bash
+npm test
+```
+
+Medir o gap contra os ótimos provados do PSPLIB J30:
+
+```bash
+node scripts/fetch-psplib.mjs        # baixa as 480 instâncias + os ótimos para .psplib/
+npm run validate -- --iters 30000    # amostra de 48 famílias
+npm run validate -- --full           # as 480 instâncias
+```
+
+## Arquitetura
+
+```text
+UI (React, thread principal)
+  └─ Comlink ─▶ Web Worker
+                 └─ WebAssembly (AssemblyScript)
+                      ├─ RCPSP: serial SGS + simulated annealing + double justification
+                      ├─ Monte Carlo: amostragem PERT-beta + re-decodificação
+                      └─ Weibull: máxima verossimilhança com censura à direita
+```
+
+O motor numérico é pesado e roda por segundos a minutos. Ele executa em WebAssembly dentro
+de uma Web Worker, fora da thread principal: a página não congela, a busca é cancelável e
+reporta progresso ao vivo. Nenhum cálculo acontece no servidor, então o deploy é
+essencialmente estático e a persistência de cenários é local (IndexedDB, via Dexie). O
+cronograma é otimizado sobre uma _activity list_ mantida sempre viável quanto a
+precedências; o serial SGS a decodifica em cronograma, e o simulated annealing com operador
+de realocação e _double justification_ a melhora.
+
+**Stack.** Next.js 16 · React 19 · TypeScript 5.9 · Tailwind CSS v4 · AssemblyScript 0.28
+(→ WASM) · Comlink · Dexie · Zustand.
+
+## Alternativas consideradas
+
+- **CP-SAT (OR-Tools) em vez da metaheurística.** A abordagem exata natural para o RCPSP é
+  a programação por restrições. Ela não é usada porque OR-Tools não compila de forma limpa
+  para WebAssembly, e o requisito é rodar o solver inteiro no cliente. A metaheurística
+  (serial SGS + simulated annealing + double justification) é compacta, determinística por
+  semente e compilável sem dependências nativas. O tradeoff é assumido: ela não prova
+  otimalidade, e sobra um gap residual de ~1–2% em poucas instâncias.
+- **Função serverless em vez de Web Worker.** Uma função serverless tem timeout de dezenas
+  de segundos; o solver roda por minutos. Rodando em WASM numa worker, não há esse limite —
+  e a escolha deixa de ser otimização para ser viabilidade.
+- **Rust em vez de AssemblyScript.** Rust geraria WASM mais rápido, ao custo de uma
+  toolchain nativa no build. AssemblyScript compila para WASM apenas com npm, o que mantém o
+  build reprodutível no ambiente do Vercel sem passos extras.
+- **Postgres em vez de IndexedDB.** Sem backend, não há onde hospedar o banco no plano
+  gratuito; os cenários vivem no navegador.
+
+## Benchmarks
+
+O solver tem _ground truth_ público: a biblioteca **PSPLIB** (Kolisch & Sprecher), cujo
+conjunto J30 tem ótimo provado para todas as 480 instâncias (Demeulemeester & Herroelen). O
+gap ao ótimo é medido, não declarado.
+
+Resultado sobre a amostra das 48 famílias (primeira instância de cada), 30.000 iterações por
+instância, semente fixa `12345` — reproduzível bit a bit com o comando abaixo:
 
 | Métrica        | Valor         |
 | -------------- | ------------- |
@@ -50,104 +127,44 @@ parâmetro), 30.000 iterações por instância, semente fixa:
 | Gap médio      | 0,151%        |
 | Pior gap       | 2,33%         |
 
-Reproduzível com `npm run validate` após baixar o dataset (abaixo). O `--full` roda as
-480 instâncias.
-
-### Escolha de método: metaheurística vs. exato (comparação honesta)
-
-A abordagem exata natural para RCPSP é **CP-SAT** (OR-Tools). Ela não é usada aqui por
-uma razão de engenharia, não de preferência: OR-Tools não compila de forma limpa para
-WebAssembly, e o requisito de arquitetura é rodar o solver inteiro no cliente. A
-metaheurística (serial SGS + simulated annealing + double justification) foi escolhida
-por ser compacta, determinística por semente e compilável para WASM sem dependências
-nativas.
-
-O tradeoff é real e assumido: um método exato fecharia o gap residual (as poucas
-instâncias em ~1–2%) e provaria otimalidade, ao custo de um modelo bem mais pesado. A
-metaheurística entrega gap médio abaixo de 0,2% no J30 com tempo de milissegundos por
-instância — suficiente para a decisão de planejamento, e honesto quanto ao que é.
-
-Um asterisco de honestidade: o PSPLIB valida o **motor**, não as restrições realistas
-de domínio (espaço confinado, guindaste único, curva de aprendizado). Essas não têm
-benchmark público; são modeladas de acordo com a prática de campo.
-
-## Arquitetura
-
-```
-UI (React, main thread)
-  └─ Comlink ──> Web Worker
-                   └─ WebAssembly (AssemblyScript)
-                        ├─ RCPSP: serial SGS + simulated annealing
-                        ├─ Monte Carlo: PERT-beta + re-decodificação
-                        └─ Weibull: MLE censurado
-```
-
-O motor numérico é pesado e roda por segundos a minutos. Isso é **inviável em uma
-função serverless** (timeout), então ele não toca no serverless: roda em WASM numa
-Web Worker, fora da main thread — a página não congela e a busca é cancelável, com
-progresso ao vivo. Persistência de cenários é local (IndexedDB). O deploy resultante é
-essencialmente estático.
-
-## Stack
-
-Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 · AssemblyScript (→ WASM) ·
-Comlink · Dexie (IndexedDB).
-
-## Desenvolvimento
-
 ```bash
-npm install
-npm run dev          # compila o WASM (predev) e sobe o Next em modo dev
+npm run validate -- --iters 30000
 ```
 
-O build de produção compila o WASM no passo `prebuild`:
+O número é determinístico por semente e independe de hardware.
 
-```bash
-npm run build
-```
+## Testes
 
-### Validar o motor no PSPLIB
+- **Invariantes (Vitest, `npm test`).** Carregam o mesmo `.wasm` que o app usa e exercitam o
+  motor de verdade: viabilidade do cronograma (precedência e capacidade), ótimo provado na
+  J30 1-1, rejeição de import com ciclo, e o ajuste de Weibull censurado. Não dependem do
+  dataset externo.
+- **Validação contra ground truth (`npm run validate`).** Mede o gap ao ótimo provado sobre
+  o J30. Requer o dataset baixado.
+- **Estático.** `npm run lint`, `npm run typecheck` e `npm run build`.
 
-```bash
-node scripts/fetch-psplib.mjs   # baixa as 480 instâncias J30 + os ótimos para .psplib/
-npm run validate                # amostra de 48 famílias, 30k iterações
-npm run validate -- --full      # todas as 480 instâncias
-```
+## Limitações
 
-O subconjunto empacotado no app (`src/lib/data/psplib-sample.json`) é gerado por
-`node scripts/gen-psplib-sample.mjs` a partir do dataset local.
-
-## Estrutura
-
-```
-assembly/            Motor numérico em AssemblyScript (compila para public/wasm/)
-  rcpsp.ts           Serial SGS + simulated annealing + double justification + CPM
-  montecarlo.ts      Amostragem PERT-beta e re-decodificação
-  weibull.ts         MLE de Weibull com censura à direita
-src/
-  lib/engine/        Loader WASM, Web Worker e cliente Comlink
-  lib/rcpsp/         Modelo de domínio, codificação e derivações de cronograma
-  lib/psplib/        Parser do formato .sm e tabela de ótimos
-  lib/sap/           Importador IW39/IW49
-  lib/weibull/       Otimização de intervalo (substituição por idade)
-  components/        UI (dashboard, Gantt, histogramas, Monte Carlo, Weibull)
-scripts/             Validação e preparação do dataset
-```
+- O solver é metaheurístico: não prova otimalidade. Sobra gap residual de ~1–2% em poucas
+  instâncias do J30.
+- O modelo de otimização considera precedências e recursos renováveis com capacidade — o
+  guindaste único é um recurso de capacidade 1 e aparece como gargalo real. Os marcadores de
+  espaço confinado e de guindaste no Gantt são informativos: restrições de adjacência de
+  espaço confinado, curva de aprendizado, turno/hora extra e disponibilidade de sobressalente
+  não entram no modelo.
+- O PSPLIB valida o motor de agendamento, não as escolhas de modelagem de domínio — essas
+  não têm benchmark público.
+- Roda inteiramente no cliente: não há backend nem sincronização entre dispositivos. Os
+  cenários ficam no navegador (IndexedDB).
 
 ## Dados e atribuição
 
-- **PSPLIB** — Kolisch, R.; Sprecher, A. *PSPLIB — a project scheduling problem
-  library.* European Journal of Operational Research, 1997.
-- **Ótimos do J30** — Demeulemeester, E.; Herroelen, W. As instâncias `.sm` são
-  espelhadas de repositório público; os ótimos vêm do arquivo original preservado no
-  Internet Archive. Os arquivos ficam em `.psplib/` (fora do versionamento) e são
-  baixados por `scripts/fetch-psplib.mjs`.
-
-## Deploy
-
-Compatível com Vercel (plano Hobby). O `prebuild` gera o `.wasm` no build; nenhuma
-função serverless é necessária, pois todo o cálculo roda no cliente.
+- **PSPLIB** — Kolisch, R.; Sprecher, A. _PSPLIB — a project scheduling problem library._
+  European Journal of Operational Research, 1997.
+- **Ótimos do J30** — Demeulemeester, E.; Herroelen, W. As instâncias `.sm` são espelhadas de
+  repositório público; os ótimos vêm do arquivo original preservado no Internet Archive.
+  Ambos são baixados por `scripts/fetch-psplib.mjs` para `.psplib/`, fora do versionamento.
 
 ## Licença
 
-MIT.
+MIT — ver [LICENSE](LICENSE). Autoria: Igor Bahia.

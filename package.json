@@ -13,7 +13,9 @@
     "typecheck": "tsc --noEmit",
     "asbuild": "asc --config asconfig.json --target release",
     "asbuild:debug": "asc --config asconfig.json --target debug",
-    "validate": "node scripts/validate.mjs"
+    "validate": "node scripts/validate.mjs",
+    "test": "vitest run",
+    "pretest": "npm run asbuild"
   },
   "repository": {
     "type": "git",
@@ -53,7 +55,8 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.64.0"
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
   },
   "overrides": {
     "postcss": "^8.5.19"
