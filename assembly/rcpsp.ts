@@ -50,8 +50,6 @@ let iterBudget: i32 = 1; // usado para o decaimento de temperatura
 const TCOLD: f64 = 0.0001; // alvo de temperatura ao fim do orçamento
 const TFLOOR: f64 = 1e-6; // piso numérico
 
-// Buffer de trabalho para a double justification.
-let tmpOrder: Int32Array = new Int32Array(0);
 
 // =====================================================================
 // Parsing
@@ -119,7 +117,6 @@ export function initProblem(data: Int32Array, seed: u32): void {
   posOf = new Int32Array(J);
   bestOrder = new Int32Array(J);
   bestStart = new Int32Array(J);
-  tmpOrder = new Int32Array(J);
 
   computeCPM();
   ensureHorizon(sumDur(baseDur) + 1);
@@ -421,25 +418,15 @@ export function step(iters: i32): i32 {
     }
 
     if (accept) {
-      curMakespan = cand;
-      if (cand < bestMakespan) {
-        // tenta apertar com double justification antes de gravar o recorde
-        for (let i = 0; i < J; i++) tmpOrder[i] = order[i];
-        const jms = justify(tmpOrder, baseDur);
-        if (jms < bestMakespan) {
-          for (let i = 0; i < J; i++) {
-            order[i] = tmpOrder[i];
-            posOf[order[i]] = i;
-          }
-          curMakespan = jms;
-        }
-        // regrava recorde a partir do estado atual
-        curMakespan = decodeSerial(order, baseDur);
-        if (curMakespan < bestMakespan) copyOrderToBest();
-      }
+      // double justification em toda aceitação: a busca passa a operar sobre cronogramas
+      // já justificados (forward-backward). Isso costuma fechar as instâncias que a busca
+      // pura deixa presas a ~1-2% do ótimo, ao custo de mais trabalho por aceitação.
+      const jms = justify(order, baseDur);
+      for (let i = 0; i < J; i++) posOf[order[i]] = i;
+      curMakespan = jms;
+      if (jms < bestMakespan) copyOrderToBest();
     } else {
-      // desfaz o shift
-      applyShift(order, posOf, toPos, fromPos);
+      applyShift(order, posOf, toPos, fromPos); // desfaz o shift
     }
 
     // resfriamento geométrico ao longo do orçamento total de iterações:

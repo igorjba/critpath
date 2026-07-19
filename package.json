@@ -21,7 +21,7 @@
     "type": "git",
     "url": "git+https://github.com/igorjba/critpath.git"
   },
-  "license": "MIT",
+  "license": "UNLICENSED",
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -4,8 +4,8 @@ Encontra o cronograma que deixa uma unidade industrial parada para manutenção 
 tempo possível, respeitando equipes e equipamentos limitados.
 
 [![CI](https://github.com/igorjba/critpath/actions/workflows/ci.yml/badge.svg)](https://github.com/igorjba/critpath/actions/workflows/ci.yml)
-[![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue)](LICENSE)
-![PSPLIB J30](https://img.shields.io/badge/PSPLIB%20J30-44%2F48%20%C3%B3timo%20%C2%B7%20gap%200.151%25-brightgreen)
+[![Direitos reservados](https://img.shields.io/badge/direitos-reservados-lightgrey)](LICENSE)
+![PSPLIB J30](https://img.shields.io/badge/PSPLIB%20J30-0.064%25%20do%20%C3%B3timo-brightgreen)
 
 ![Painel do Critpath com a parada de exemplo resolvida: indicadores no topo, Gantt com o
 caminho crítico em vermelho, histograma de carga por recurso com o guindaste saturado como
@@ -40,7 +40,7 @@ Cada invariante abaixo é verificada por um comando do repositório.
 | Na instância J30 1-1, o solver encontra o ótimo provado (makespan 43)                             | `npm test`                        |
 | Um import IW39/IW49 com ciclo de precedências é rejeitado, sem corromper o estado                 | `npm test`                        |
 | O ajuste de Weibull com censura recupera o regime de desgaste (forma _k_ > 1) na amostra de selos | `npm test`                        |
-| Sobre 48 famílias do J30, atinge o ótimo em 44 e fica a 0,151% dele em média (pior caso 2,33%)    | `npm run validate -- --iters 30000` † |
+| Sobre 48 famílias do J30, fica a 0,064% do ótimo em média — ótimo exato em 46, pior caso 1,89%    | `npm run validate -- --iters 30000` † |
 
 † Requer baixar o dataset uma vez: `node scripts/fetch-psplib.mjs`. As linhas provadas por
 `npm test` não dependem do dataset — usam o subconjunto empacotado em
@@ -121,17 +121,20 @@ gap ao ótimo é medido, não declarado.
 Resultado sobre a amostra das 48 famílias (primeira instância de cada), 30.000 iterações por
 instância, semente fixa `12345` — reproduzível bit a bit com o comando abaixo:
 
-| Métrica        | Valor         |
-| -------------- | ------------- |
-| Ótimo atingido | 44/48 (91,7%) |
-| Gap médio      | 0,151%        |
-| Pior gap       | 2,33%         |
+| Métrica                    | Valor         |
+| -------------------------- | ------------- |
+| Gap médio ao ótimo         | 0,064%        |
+| Ótimo exato encontrado     | 46/48 (95,8%) |
+| Pior gap                   | 1,89%         |
 
 ```bash
 npm run validate -- --iters 30000
 ```
 
-O número é determinístico por semente e independe de hardware.
+Em 46 das 48 famílias o solver encontra a solução comprovadamente ótima; nas 2 restantes fica
+a no máximo 1,89% dela. Um gap médio de 0,064% significa, na prática, uma solução a menos de um
+décimo de por cento do melhor cronograma teórico possível. O número é determinístico por
+semente e independe de hardware.
 
 ## Testes
 
@@ -167,4 +170,4 @@ O número é determinístico por semente e independe de hardware.
 
 ## Licença
 
-MIT — ver [LICENSE](LICENSE). Autoria: Igor Bahia.
+Todos os direitos reservados — ver [LICENSE](LICENSE). Autoria: Igor Bahia.

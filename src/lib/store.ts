@@ -35,7 +35,7 @@ export const useApp = create<AppState>((set, get) => ({
   project: turnaroundSample(),
   sourceLabel: "Parada CDU (exemplo)",
   sourceKey: "turnaround",
-  iterations: 40000,
+  iterations: 20000,
   seed: 20260718,
 
   status: "idle",
